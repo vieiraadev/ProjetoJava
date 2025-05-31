@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TarefaDAO {
-    private static final String FILE_NAME = "tarefas.dat";
+    private static final String FILE_NAME = "data/tarefas.dat";
 
     public static void salvarTarefa(Tarefa nova) throws IOException {
         List<Tarefa> lista = listarTarefas();
