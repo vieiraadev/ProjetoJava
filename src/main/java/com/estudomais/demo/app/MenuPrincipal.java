@@ -6,10 +6,10 @@ import com.estudomais.demo.view.TarefaView;
 import com.estudomais.demo.view.DetalhesView;
 import com.estudomais.demo.view.VinculoAlunoDisciplinaView;
 import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
 public class MenuPrincipal extends Application {
@@ -30,14 +30,12 @@ public class MenuPrincipal extends Application {
         btnDetalhes.setOnAction(e -> new DetalhesView().exibir());
         btnVinculo.setOnAction(e -> new VinculoAlunoDisciplinaView().exibir());
 
-        HBox linha1 = new HBox(10, btnAluno, btnDisciplina);
-        HBox linha2 = new HBox(10, btnTarefa, btnDetalhes);
-        HBox linha3 = new HBox(10, btnVinculo);
+        HBox layout = new HBox(15, btnAluno, btnDisciplina, btnTarefa, btnDetalhes, btnVinculo);
+        layout.setPadding(new Insets(20));
 
-        VBox layout = new VBox(15, linha1, linha2, linha3);
-        layout.setPadding(new javafx.geometry.Insets(20));
+        // Aumenta o tamanho da tela para acomodar os botões em linha
+        Scene scene = new Scene(layout, 680, 70);
 
-        Scene scene = new Scene(layout, 500, 200);
         primaryStage.setScene(scene);
         primaryStage.show();
     }
