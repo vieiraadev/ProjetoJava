@@ -58,7 +58,7 @@ public class MenuPrincipal extends Application {
         StackPane root = new StackPane(container);
         root.setStyle("-fx-background-color: #ecf0f1;");
 
-        Scene scene = new Scene(root, 900, 200);
+        Scene scene = new Scene(root, 900, 100);
         primaryStage.setScene(scene);
         primaryStage.show();
     }

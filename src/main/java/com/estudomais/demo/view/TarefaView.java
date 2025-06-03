@@ -71,9 +71,12 @@ public class TarefaView {
             double peso;
             try {
                 peso = Double.parseDouble(pesoStr);
-                if (peso <= 0) throw new NumberFormatException();
+                if (peso < 0 || peso > 100) {
+                    txtArea.setText("Erro: O peso da tarefa deve estar entre 0 e 100.");
+                    return;
+                }
             } catch (NumberFormatException ex) {
-                txtArea.setText("Erro: O peso deve ser um número positivo.");
+                txtArea.setText("Erro: Peso inválido. Use números como 25 ou 50.5.");
                 return;
             }
 

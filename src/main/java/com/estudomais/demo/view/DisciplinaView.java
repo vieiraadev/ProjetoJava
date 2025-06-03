@@ -51,24 +51,56 @@ public class DisciplinaView {
             String semestre = txtSemestre.getText().trim();
             String professor = txtProfessor.getText().trim();
 
-            if (nome.isEmpty() || codigo.isEmpty() || carga.isEmpty() || semestre.isEmpty()) {
+            if (nome.isEmpty() || codigo.isEmpty() || carga.isEmpty() || semestre.isEmpty() || professor.isEmpty()) {
                 txtArea.setText("Erro: Todos os campos obrigatórios devem ser preenchidos.");
                 return;
             }
 
+            if (!nome.chars().allMatch(c -> Character.isLetter(c) || Character.isWhitespace(c))) {
+                txtArea.setText("Erro: O nome da disciplina deve conter apenas letras.");
+                return;
+            }
+
+            if (!professor.chars().allMatch(c -> Character.isLetter(c) || Character.isWhitespace(c))) {
+                txtArea.setText("Erro: O nome do professor deve conter apenas letras.");
+                return;
+            }
+
+            int cargaInt;
             try {
-                int cargaInt = Integer.parseInt(carga);
-
-                List<Disciplina> existentes = DisciplinaDAO.listarDisciplinas();
-                boolean codigoDuplicado = existentes.stream()
-                        .anyMatch(d -> d.getCodigo().equalsIgnoreCase(codigo) &&
-                                (!modoEdicao || !d.getNome().equalsIgnoreCase(nome)));
-
-                if (codigoDuplicado) {
-                    txtArea.setText("Erro: Já existe uma disciplina com esse código.");
+                cargaInt = Integer.parseInt(carga);
+                if (cargaInt <= 0) {
+                    txtArea.setText("Erro: A carga horária deve ser maior que zero.");
                     return;
                 }
+            } catch (NumberFormatException ex) {
+                txtArea.setText("Erro: Carga horária deve ser um número inteiro.");
+                return;
+            }
 
+            int semestreInt;
+            try {
+                semestreInt = Integer.parseInt(semestre);
+                if (semestreInt < 1 || semestreInt > 10) {
+                    txtArea.setText("Erro: O semestre deve estar entre 1 e 10.");
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                txtArea.setText("Erro: O semestre deve ser um número válido.");
+                return;
+            }
+
+            List<Disciplina> existentes = DisciplinaDAO.listarDisciplinas();
+            boolean codigoDuplicado = existentes.stream()
+                    .anyMatch(d -> d.getCodigo().equalsIgnoreCase(codigo) &&
+                            (!modoEdicao || !d.getNome().equalsIgnoreCase(nome)));
+
+            if (codigoDuplicado) {
+                txtArea.setText("Erro: Já existe uma disciplina com esse código.");
+                return;
+            }
+
+            try {
                 Disciplina disciplina = new Disciplina(nome, codigo, cargaInt, semestre, professor);
                 DisciplinaDAO.salvarDisciplina(disciplina);
                 txtArea.setText(modoEdicao ? "Disciplina atualizada com sucesso!" : "Disciplina salva com sucesso!");
@@ -77,8 +109,6 @@ public class DisciplinaView {
                 atualizarCombo(comboEditar);
                 txtCodigo.setDisable(false);
                 modoEdicao = false;
-            } catch (NumberFormatException ex) {
-                txtArea.setText("Erro: Carga horária deve ser um número inteiro.");
             } catch (IOException ex) {
                 txtArea.setText("Erro ao salvar: " + ex.getMessage());
             }

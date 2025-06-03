@@ -31,6 +31,11 @@ public class DetalhesView {
 
         btnBuscarDisciplina.setOnAction(e -> {
             String codigo = txtBuscaDisciplina.getText().trim();
+            if (codigo.isEmpty()) {
+                resultado.setText("Erro: Informe o código da disciplina.");
+                return;
+            }
+
             List<Disciplina> disciplinas = DisciplinaDAO.listarDisciplinas();
             List<Tarefa> tarefas = TarefaDAO.listarTarefas();
             List<Aluno> alunos = AlunoDAO.listarAlunos();
@@ -69,6 +74,11 @@ public class DetalhesView {
 
         btnBuscarAluno.setOnAction(e -> {
             String nomeAluno = txtBuscaAluno.getText().trim();
+            if (nomeAluno.isEmpty()) {
+                resultado.setText("Erro: Informe o nome do aluno.");
+                return;
+            }
+
             List<Aluno> alunos = AlunoDAO.listarAlunos();
 
             Aluno encontrado = alunos.stream()
@@ -84,7 +94,7 @@ public class DetalhesView {
                 }
                 resultado.setText(sb.toString());
             } else {
-                resultado.setText("Aluno não encontrado ou sem disciplinas vinculadas.");
+                resultado.setText("Aluno não encontrado.");
             }
         });
 

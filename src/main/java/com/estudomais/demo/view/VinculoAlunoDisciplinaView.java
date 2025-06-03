@@ -4,7 +4,6 @@ import com.estudomais.demo.model.Aluno;
 import com.estudomais.demo.model.Disciplina;
 import com.estudomais.demo.persistence.AlunoDAO;
 import com.estudomais.demo.persistence.DisciplinaDAO;
-import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -21,35 +20,52 @@ public class VinculoAlunoDisciplinaView {
         Stage stage = new Stage();
         stage.setTitle("Gerenciar Vínculo Aluno x Disciplinas");
 
-        // Combo de alunos
         ComboBox<String> comboAlunos = new ComboBox<>();
         List<Aluno> alunos = AlunoDAO.listarAlunos();
         for (Aluno a : alunos) {
             comboAlunos.getItems().add(a.getNome());
         }
 
-        // Lista de disciplinas para vincular
-        ListView<String> listaDisciplinasVincular = new ListView<>();
-        listaDisciplinasVincular.setItems(FXCollections.observableArrayList(
-                DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).toList()
-        ));
-        listaDisciplinasVincular.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        listaDisciplinasVincular.setMaxHeight(120);
+        // Dropdown para disciplinas a vincular
+        List<String> disciplinasSelecionadasVincular = new ArrayList<>();
+        MenuButton dropdownVincular = new MenuButton("Selecionar Disciplinas para Vincular");
 
-        // Lista de disciplinas para remover
-        ListView<String> listaDisciplinasRemover = new ListView<>();
-        listaDisciplinasRemover.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        listaDisciplinasRemover.setMaxHeight(120);
+        for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).toList()) {
+            CheckMenuItem item = new CheckMenuItem(nomeDisc);
+            item.setOnAction(e -> {
+                if (item.isSelected()) {
+                    disciplinasSelecionadasVincular.add(nomeDisc);
+                } else {
+                    disciplinasSelecionadasVincular.remove(nomeDisc);
+                }
+            });
+            dropdownVincular.getItems().add(item);
+        }
 
-        // Atualizar disciplinas ao trocar o aluno
+        // Dropdown para disciplinas a remover (atualizado ao selecionar aluno)
+        List<String> disciplinasSelecionadasRemover = new ArrayList<>();
+        MenuButton dropdownRemover = new MenuButton("Selecionar Disciplinas para Remover");
+
         comboAlunos.setOnAction(e -> {
+            disciplinasSelecionadasRemover.clear();
+            dropdownRemover.getItems().clear();
             String nomeSelecionado = comboAlunos.getValue();
             Aluno aluno = alunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeSelecionado))
                     .findFirst()
                     .orElse(null);
             if (aluno != null) {
-                listaDisciplinasRemover.setItems(FXCollections.observableArrayList(aluno.getDisciplinasVinculadas()));
+                for (String disc : aluno.getDisciplinasVinculadas()) {
+                    CheckMenuItem item = new CheckMenuItem(disc);
+                    item.setOnAction(evt -> {
+                        if (item.isSelected()) {
+                            disciplinasSelecionadasRemover.add(disc);
+                        } else {
+                            disciplinasSelecionadasRemover.remove(disc);
+                        }
+                    });
+                    dropdownRemover.getItems().add(item);
+                }
             }
         });
 
@@ -58,32 +74,45 @@ public class VinculoAlunoDisciplinaView {
         TextArea resultado = new TextArea();
         resultado.setEditable(false);
 
-        // Vincular disciplinas
         btnVincular.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
             if (nomeSelecionado == null) {
-                resultado.setText("Selecione um aluno.");
+                resultado.setText("Erro: Selecione um aluno para vincular.");
                 return;
             }
 
-            List<String> disciplinasSelecionadas = new ArrayList<>(listaDisciplinasVincular.getSelectionModel().getSelectedItems());
+            if (disciplinasSelecionadasVincular.isEmpty()) {
+                resultado.setText("Erro: Selecione ao menos uma disciplina para vincular.");
+                return;
+            }
 
             for (Aluno a : alunos) {
                 if (a.getNome().equalsIgnoreCase(nomeSelecionado)) {
                     List<String> atuais = a.getDisciplinasVinculadas();
                     if (atuais == null) atuais = new ArrayList<>();
 
-                    for (String nova : disciplinasSelecionadas) {
+                    List<String> jaVinculadas = new ArrayList<>();
+                    List<String> novasParaVincular = new ArrayList<>();
+
+                    for (String nova : disciplinasSelecionadasVincular) {
                         if (!atuais.contains(nova)) {
-                            atuais.add(nova);
+                            novasParaVincular.add(nova);
+                        } else {
+                            jaVinculadas.add(nova);
                         }
                     }
 
+                    if (novasParaVincular.isEmpty()) {
+                        resultado.setText("Todas as disciplinas selecionadas já estão vinculadas ao aluno.");
+                        return;
+                    }
+
+                    atuais.addAll(novasParaVincular);
                     a.setDisciplinasVinculadas(atuais);
                     try {
                         AlunoDAO.salvarLista(alunos);
-                        resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome());
-                        listaDisciplinasRemover.setItems(FXCollections.observableArrayList(atuais));
+                        resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome() + ". Disciplinas ignoradas (já vinculadas): " + String.join(", ", jaVinculadas));
+                        comboAlunos.getOnAction().handle(null);
                     } catch (IOException ex) {
                         resultado.setText("Erro ao salvar: " + ex.getMessage());
                     }
@@ -92,26 +121,38 @@ public class VinculoAlunoDisciplinaView {
             }
         });
 
-        // Remover disciplinas
         btnRemover.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
             if (nomeSelecionado == null) {
-                resultado.setText("Selecione um aluno.");
+                resultado.setText("Erro: Selecione um aluno para remover disciplinas.");
                 return;
             }
 
-            List<String> disciplinasRemover = new ArrayList<>(listaDisciplinasRemover.getSelectionModel().getSelectedItems());
+            if (disciplinasSelecionadasRemover.isEmpty()) {
+                resultado.setText("Erro: Selecione ao menos uma disciplina para remover.");
+                return;
+            }
 
             for (Aluno a : alunos) {
                 if (a.getNome().equalsIgnoreCase(nomeSelecionado)) {
                     List<String> atuais = a.getDisciplinasVinculadas();
                     if (atuais != null) {
-                        atuais.removeAll(disciplinasRemover);
+                        List<String> realmenteRemovidas = new ArrayList<>();
+                        for (String d : disciplinasSelecionadasRemover) {
+                            if (atuais.contains(d)) {
+                                realmenteRemovidas.add(d);
+                            }
+                        }
+                        if (realmenteRemovidas.isEmpty()) {
+                            resultado.setText("Nenhuma das disciplinas selecionadas está vinculada ao aluno.");
+                            return;
+                        }
+                        atuais.removeAll(realmenteRemovidas);
                         a.setDisciplinasVinculadas(atuais);
                         try {
                             AlunoDAO.salvarLista(alunos);
-                            resultado.setText("Disciplinas removidas do aluno " + a.getNome());
-                            listaDisciplinasRemover.setItems(FXCollections.observableArrayList(atuais));
+                            resultado.setText("Disciplinas removidas do aluno " + a.getNome() + ": " + String.join(", ", realmenteRemovidas));
+                            comboAlunos.getOnAction().handle(null);
                         } catch (IOException ex) {
                             resultado.setText("Erro ao salvar: " + ex.getMessage());
                         }
@@ -123,8 +164,8 @@ public class VinculoAlunoDisciplinaView {
 
         VBox layout = new VBox(10,
                 new Label("Selecione o Aluno:"), comboAlunos,
-                new Label("Disciplinas para Vincular:"), listaDisciplinasVincular, btnVincular,
-                new Label("Disciplinas para Remover:"), listaDisciplinasRemover, btnRemover,
+                new Label("Disciplinas para Vincular:"), dropdownVincular, btnVincular,
+                new Label("Disciplinas para Remover:"), dropdownRemover, btnRemover,
                 resultado
         );
         layout.setPadding(new Insets(10));

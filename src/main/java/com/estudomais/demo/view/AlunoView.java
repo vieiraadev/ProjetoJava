@@ -28,14 +28,20 @@ public class AlunoView {
         TextField txtPeriodo = new TextField();
         TextField txtFaculdade = new TextField();
 
-        ListView<String> listaDisciplinas = new ListView<>();
-        listaDisciplinas.setItems(FXCollections.observableArrayList(
-                DisciplinaDAO.listarDisciplinas().stream()
-                        .map(d -> d.getNome())
-                        .collect(Collectors.toList())
-        ));
-        listaDisciplinas.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-        listaDisciplinas.setMaxHeight(120);
+        List<String> disciplinasSelecionadas = new ArrayList<>();
+        MenuButton dropdownDisciplinas = new MenuButton("Selecionar Disciplinas");
+
+        for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(d -> d.getNome()).collect(Collectors.toList())) {
+            CheckMenuItem item = new CheckMenuItem(nomeDisc);
+            item.setOnAction(e -> {
+                if (item.isSelected()) {
+                    disciplinasSelecionadas.add(nomeDisc);
+                } else {
+                    disciplinasSelecionadas.remove(nomeDisc);
+                }
+            });
+            dropdownDisciplinas.getItems().add(item);
+        }
 
         ComboBox<String> comboRemoverAluno = new ComboBox<>();
         comboRemoverAluno.setPromptText("Selecione o aluno para remover");
@@ -59,7 +65,7 @@ public class AlunoView {
             String curso = txtCurso.getText().trim();
             String periodo = txtPeriodo.getText().trim();
             String faculdade = txtFaculdade.getText().trim();
-            List<String> disciplinas = new ArrayList<>(listaDisciplinas.getSelectionModel().getSelectedItems());
+            List<String> disciplinas = new ArrayList<>(disciplinasSelecionadas);
 
             if (nome.isEmpty() || email.isEmpty() || curso.isEmpty() || periodo.isEmpty() || faculdade.isEmpty()) {
                 txtArea.setText("Erro: Todos os campos devem ser preenchidos.");
@@ -68,6 +74,33 @@ public class AlunoView {
 
             if (!email.contains("@") || !email.contains(".")) {
                 txtArea.setText("Erro: E-mail inválido.");
+                return;
+            }
+
+            if (!curso.chars().allMatch(c -> Character.isLetter(c) || Character.isWhitespace(c))) {
+                txtArea.setText("Erro: O campo 'Curso' só pode conter letras.");
+                return;
+            }
+
+            if (!faculdade.chars().allMatch(c -> Character.isLetter(c) || Character.isWhitespace(c))) {
+                txtArea.setText("Erro: O campo 'Faculdade' só pode conter letras.");
+                return;
+            }
+
+            int periodoNum;
+            try {
+                periodoNum = Integer.parseInt(periodo);
+                if (periodoNum < 1 || periodoNum > 10) {
+                    txtArea.setText("Erro: O período deve ser um número entre 1 e 10.");
+                    return;
+                }
+            } catch (NumberFormatException ex) {
+                txtArea.setText("Erro: O período deve ser um número válido.");
+                return;
+            }
+
+            if (disciplinas.isEmpty()) {
+                txtArea.setText("Erro: Selecione pelo menos uma disciplina.");
                 return;
             }
 
@@ -158,11 +191,14 @@ public class AlunoView {
                 txtPeriodo.setText(alunoSelecionado.getPeriodo());
                 txtFaculdade.setText(alunoSelecionado.getFaculdade());
 
-                listaDisciplinas.getSelectionModel().clearSelection();
-                for (String disc : alunoSelecionado.getDisciplinasVinculadas()) {
-                    int index = listaDisciplinas.getItems().indexOf(disc);
-                    if (index >= 0) {
-                        listaDisciplinas.getSelectionModel().select(index);
+                disciplinasSelecionadas.clear();
+                for (MenuItem mi : dropdownDisciplinas.getItems()) {
+                    if (mi instanceof CheckMenuItem checkItem) {
+                        boolean selected = alunoSelecionado.getDisciplinasVinculadas().contains(checkItem.getText());
+                        checkItem.setSelected(selected);
+                        if (selected) {
+                            disciplinasSelecionadas.add(checkItem.getText());
+                        }
                     }
                 }
 
@@ -184,7 +220,7 @@ public class AlunoView {
                 new Label("Curso:"), txtCurso,
                 new Label("Período:"), txtPeriodo,
                 new Label("Faculdade:"), txtFaculdade,
-                new Label("Disciplinas Vinculadas:"), listaDisciplinas,
+                new Label("Disciplinas Vinculadas:"), dropdownDisciplinas,
                 botoes,
                 new Label("Remover Aluno:"), comboRemoverAluno, btnRemover,
                 new Label("Editar Aluno:"), comboEditarAluno, btnEditar,
