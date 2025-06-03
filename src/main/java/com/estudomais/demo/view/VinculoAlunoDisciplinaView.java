@@ -49,9 +49,17 @@ public class VinculoAlunoDisciplinaView {
 
             for (Aluno a : alunos) {
                 if (a.getNome().equalsIgnoreCase(nomeSelecionado)) {
-                    a.setDisciplinasVinculadas(disciplinasSelecionadas);
+                    List<String> atuais = a.getDisciplinasVinculadas();
+                    if (atuais == null) atuais = new ArrayList<>();
+
+                    for (String nova : disciplinasSelecionadas) {
+                        if (!atuais.contains(nova)) {
+                            atuais.add(nova);
+                        }
+                    }
+
+                    a.setDisciplinasVinculadas(atuais);
                     try {
-                        // salvar todos os alunos de novo com este atualizado
                         AlunoDAO.salvarLista(alunos);
                         resultado.setText("Disciplinas atualizadas para o aluno " + a.getNome());
                     } catch (IOException ex) {

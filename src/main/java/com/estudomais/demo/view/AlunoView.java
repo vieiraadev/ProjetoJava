@@ -28,13 +28,14 @@ public class AlunoView {
         TextField txtPeriodo = new TextField();
         TextField txtFaculdade = new TextField();
 
-        ComboBox<String> comboDisciplina = new ComboBox<>();
-        comboDisciplina.setPromptText("Selecione uma disciplina");
-        comboDisciplina.setItems(FXCollections.observableArrayList(
+        ListView<String> listaDisciplinas = new ListView<>();
+        listaDisciplinas.setItems(FXCollections.observableArrayList(
                 DisciplinaDAO.listarDisciplinas().stream()
                         .map(d -> d.getNome())
                         .collect(Collectors.toList())
         ));
+        listaDisciplinas.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+        listaDisciplinas.setMaxHeight(120);
 
         ComboBox<String> comboRemoverAluno = new ComboBox<>();
         comboRemoverAluno.setPromptText("Selecione o aluno para remover");
@@ -58,12 +59,7 @@ public class AlunoView {
             String curso = txtCurso.getText().trim();
             String periodo = txtPeriodo.getText().trim();
             String faculdade = txtFaculdade.getText().trim();
-            String disciplinaSelecionada = comboDisciplina.getValue();
-
-            List<String> disciplinas = new ArrayList<>();
-            if (disciplinaSelecionada != null) {
-                disciplinas.add(disciplinaSelecionada);
-            }
+            List<String> disciplinas = new ArrayList<>(listaDisciplinas.getSelectionModel().getSelectedItems());
 
             if (nome.isEmpty() || email.isEmpty() || curso.isEmpty() || periodo.isEmpty() || faculdade.isEmpty()) {
                 txtArea.setText("Erro: Todos os campos devem ser preenchidos.");
@@ -109,7 +105,7 @@ public class AlunoView {
                 sb.append("Curso: ").append(a.getCurso()).append("\n");
                 sb.append("Período: ").append(a.getPeriodo()).append("\n");
                 sb.append("Faculdade: ").append(a.getFaculdade()).append("\n");
-                sb.append("Disciplinas Vinculadas: ").append(a.getDisciplinasVinculadas()).append("\n");
+                sb.append("Disciplinas Vinculadas: ").append(String.join(", ", a.getDisciplinasVinculadas())).append("\n");
                 sb.append("--------------------------\n");
             }
             txtArea.setText(sb.toString());
@@ -162,8 +158,12 @@ public class AlunoView {
                 txtPeriodo.setText(alunoSelecionado.getPeriodo());
                 txtFaculdade.setText(alunoSelecionado.getFaculdade());
 
-                if (!alunoSelecionado.getDisciplinasVinculadas().isEmpty()) {
-                    comboDisciplina.setValue(alunoSelecionado.getDisciplinasVinculadas().get(0));
+                listaDisciplinas.getSelectionModel().clearSelection();
+                for (String disc : alunoSelecionado.getDisciplinasVinculadas()) {
+                    int index = listaDisciplinas.getItems().indexOf(disc);
+                    if (index >= 0) {
+                        listaDisciplinas.getSelectionModel().select(index);
+                    }
                 }
 
                 try {
@@ -184,7 +184,7 @@ public class AlunoView {
                 new Label("Curso:"), txtCurso,
                 new Label("Período:"), txtPeriodo,
                 new Label("Faculdade:"), txtFaculdade,
-                new Label("Disciplina Vinculada:"), comboDisciplina,
+                new Label("Disciplinas Vinculadas:"), listaDisciplinas,
                 botoes,
                 new Label("Remover Aluno:"), comboRemoverAluno, btnRemover,
                 new Label("Editar Aluno:"), comboEditarAluno, btnEditar,
@@ -192,7 +192,7 @@ public class AlunoView {
         );
         layout.setPadding(new Insets(10));
 
-        Scene scene = new Scene(layout, 520, 750);
+        Scene scene = new Scene(layout, 520, 800);
         stage.setScene(scene);
         stage.show();
     }
