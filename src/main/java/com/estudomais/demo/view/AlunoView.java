@@ -4,11 +4,12 @@ import com.estudomais.demo.model.Aluno;
 import com.estudomais.demo.persistence.AlunoDAO;
 import com.estudomais.demo.persistence.DisciplinaDAO;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AlunoView {
+
+    private ObservableList<Aluno> alunosData = FXCollections.observableArrayList();
 
     public void exibir() {
         Stage stage = new Stage();
@@ -45,19 +48,23 @@ public class AlunoView {
 
         ComboBox<String> comboRemoverAluno = new ComboBox<>();
         comboRemoverAluno.setPromptText("Selecione o aluno para remover");
-        atualizarComboAlunos(comboRemoverAluno);
 
         ComboBox<String> comboEditarAluno = new ComboBox<>();
         comboEditarAluno.setPromptText("Selecione o aluno para editar");
+
+        atualizarComboAlunos(comboRemoverAluno);
         atualizarComboAlunos(comboEditarAluno);
 
         Button btnSalvar = new Button("Salvar");
-        Button btnListar = new Button("Listar");
         Button btnRemover = new Button("Remover Aluno");
         Button btnEditar = new Button("Editar Aluno");
 
         TextArea txtArea = new TextArea();
         txtArea.setEditable(false);
+        txtArea.setPrefHeight(100);
+
+        TableView<Aluno> tabelaAlunos = criarTabelaAlunos();
+        atualizarTabelaAlunos(tabelaAlunos);
 
         btnSalvar.setOnAction(e -> {
             String nome = txtNome.getText().trim();
@@ -90,8 +97,8 @@ public class AlunoView {
             int periodoNum;
             try {
                 periodoNum = Integer.parseInt(periodo);
-                if (periodoNum < 1 || periodoNum > 10) {
-                    txtArea.setText("Erro: O período deve ser um número entre 1 e 10.");
+                if (periodoNum < 1 || periodoNum > 12) {
+                    txtArea.setText("Erro: O período deve ser um número entre 1 e 12.");
                     return;
                 }
             } catch (NumberFormatException ex) {
@@ -124,24 +131,10 @@ public class AlunoView {
                 txtArea.setText("Aluno salvo com sucesso!");
                 atualizarComboAlunos(comboRemoverAluno);
                 atualizarComboAlunos(comboEditarAluno);
+                atualizarTabelaAlunos(tabelaAlunos);
             } catch (IOException ex) {
                 txtArea.setText("Erro ao salvar: " + ex.getMessage());
             }
-        });
-
-        btnListar.setOnAction(e -> {
-            var alunos = AlunoDAO.listarAlunos();
-            StringBuilder sb = new StringBuilder();
-            for (Aluno a : alunos) {
-                sb.append("Nome: ").append(a.getNome()).append("\n");
-                sb.append("Email: ").append(a.getEmail()).append("\n");
-                sb.append("Curso: ").append(a.getCurso()).append("\n");
-                sb.append("Período: ").append(a.getPeriodo()).append("\n");
-                sb.append("Faculdade: ").append(a.getFaculdade()).append("\n");
-                sb.append("Disciplinas Vinculadas: ").append(String.join(", ", a.getDisciplinasVinculadas())).append("\n");
-                sb.append("--------------------------\n");
-            }
-            txtArea.setText(sb.toString());
         });
 
         btnRemover.setOnAction(e -> {
@@ -163,6 +156,7 @@ public class AlunoView {
                     txtArea.setText("Aluno removido com sucesso!");
                     atualizarComboAlunos(comboRemoverAluno);
                     atualizarComboAlunos(comboEditarAluno);
+                    atualizarTabelaAlunos(tabelaAlunos);
                 } else {
                     txtArea.setText("Erro: aluno não encontrado.");
                 }
@@ -205,6 +199,9 @@ public class AlunoView {
                 try {
                     AlunoDAO.removerAlunoPorEmail(alunoSelecionado.getEmail());
                     txtArea.setText("Aluno carregado para edição. Altere os dados e clique em Salvar.");
+                    atualizarComboAlunos(comboRemoverAluno);
+                    atualizarComboAlunos(comboEditarAluno);
+                    atualizarTabelaAlunos(tabelaAlunos);
                 } catch (IOException ex) {
                     txtArea.setText("Erro ao preparar para edição: " + ex.getMessage());
                 }
@@ -213,22 +210,25 @@ public class AlunoView {
             }
         });
 
-        HBox botoes = new HBox(10, btnSalvar, btnListar);
-        VBox layout = new VBox(10,
+        VBox formCadastro = new VBox(8,
                 new Label("Nome:"), txtNome,
                 new Label("E-mail:"), txtEmail,
                 new Label("Curso:"), txtCurso,
                 new Label("Período:"), txtPeriodo,
                 new Label("Faculdade:"), txtFaculdade,
                 new Label("Disciplinas Vinculadas:"), dropdownDisciplinas,
-                botoes,
+                btnSalvar,
                 new Label("Remover Aluno:"), comboRemoverAluno, btnRemover,
                 new Label("Editar Aluno:"), comboEditarAluno, btnEditar,
-                txtArea
+                new Label("Mensagens do sistema:"), txtArea
         );
-        layout.setPadding(new Insets(10));
+        formCadastro.setPadding(new Insets(10));
+        formCadastro.setStyle("-fx-background-color: #eef6fb; -fx-border-color: #ccc; -fx-border-radius: 8;");
 
-        Scene scene = new Scene(layout, 520, 800);
+        HBox layoutPrincipal = new HBox(20, formCadastro, tabelaAlunos);
+        layoutPrincipal.setPadding(new Insets(20));
+
+        Scene scene = new Scene(layoutPrincipal, 1000, 700);
         stage.setScene(scene);
         stage.show();
     }
@@ -240,5 +240,43 @@ public class AlunoView {
                         .collect(Collectors.toList())
         );
         combo.setValue(null);
+    }
+
+    private TableView<Aluno> criarTabelaAlunos() {
+        TableView<Aluno> tabela = new TableView<>();
+
+        TableColumn<Aluno, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
+
+        TableColumn<Aluno, String> colEmail = new TableColumn<>("Email");
+        colEmail.setCellValueFactory(new PropertyValueFactory<>("email"));
+
+        TableColumn<Aluno, String> colCurso = new TableColumn<>("Curso");
+        colCurso.setCellValueFactory(new PropertyValueFactory<>("curso"));
+
+        TableColumn<Aluno, String> colPeriodo = new TableColumn<>("Período");
+        colPeriodo.setCellValueFactory(new PropertyValueFactory<>("periodo"));
+
+        TableColumn<Aluno, String> colFaculdade = new TableColumn<>("Faculdade");
+        colFaculdade.setCellValueFactory(new PropertyValueFactory<>("faculdade"));
+
+        TableColumn<Aluno, String> colDisciplinas = new TableColumn<>("Disciplinas");
+        colDisciplinas.setCellValueFactory(cellData -> {
+            List<String> disciplinas = cellData.getValue().getDisciplinasVinculadas();
+            String disciplinasStr = String.join(", ", disciplinas);
+            return new javafx.beans.property.SimpleStringProperty(disciplinasStr);
+        });
+
+        tabela.getColumns().addAll(colNome, colEmail, colCurso, colPeriodo, colFaculdade, colDisciplinas);
+        tabela.setPrefWidth(700);
+        tabela.setItems(alunosData);
+
+        return tabela;
+    }
+
+
+    private void atualizarTabelaAlunos(TableView<Aluno> tabela) {
+        alunosData.setAll(AlunoDAO.listarAlunos());
+        tabela.refresh();
     }
 }

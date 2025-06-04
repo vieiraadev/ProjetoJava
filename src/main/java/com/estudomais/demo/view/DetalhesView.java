@@ -18,16 +18,21 @@ public class DetalhesView {
 
     public void exibir() {
         Stage stage = new Stage();
-        stage.setTitle("Ver Detalhes");
+        stage.setTitle("Detalhes de Disciplinas e Alunos");
 
         TextField txtBuscaDisciplina = new TextField();
-        Button btnBuscarDisciplina = new Button("Buscar por Código da Disciplina");
+        txtBuscaDisciplina.setPromptText("Ex: INF101");
+
+        Button btnBuscarDisciplina = new Button("Buscar Disciplina");
 
         TextField txtBuscaAluno = new TextField();
-        Button btnBuscarAluno = new Button("Buscar por Nome do Aluno");
+        txtBuscaAluno.setPromptText("Ex: João da Silva");
+
+        Button btnBuscarAluno = new Button("Buscar Aluno");
 
         TextArea resultado = new TextArea();
         resultado.setEditable(false);
+        resultado.setPrefHeight(300);
 
         btnBuscarDisciplina.setOnAction(e -> {
             String codigo = txtBuscaDisciplina.getText().trim();
@@ -50,21 +55,27 @@ public class DetalhesView {
                 sb.append("Disciplina: ").append(encontrada.getNome()).append("\n\n");
 
                 sb.append("Tarefas vinculadas:\n");
+                boolean temTarefas = false;
                 for (Tarefa t : tarefas) {
                     if (t.getDisciplinaAssociada().equalsIgnoreCase(encontrada.getNome())) {
                         sb.append("- ").append(t.getTitulo()).append(" (Entrega: ")
                                 .append(t.getDataEntrega()).append(", Peso: ")
                                 .append(t.getPeso()).append(")\n");
+                        temTarefas = true;
                     }
                 }
+                if (!temTarefas) sb.append("Nenhuma tarefa encontrada.\n");
 
                 sb.append("\nAlunos vinculados:\n");
+                boolean temAlunos = false;
                 for (Aluno a : alunos) {
                     if (a.getDisciplinasVinculadas() != null &&
                             a.getDisciplinasVinculadas().contains(encontrada.getNome())) {
                         sb.append("- ").append(a.getNome()).append(" (").append(a.getEmail()).append(")\n");
+                        temAlunos = true;
                     }
                 }
+                if (!temAlunos) sb.append("Nenhum aluno vinculado.\n");
 
                 resultado.setText(sb.toString());
             } else {
@@ -98,14 +109,15 @@ public class DetalhesView {
             }
         });
 
-        VBox layout = new VBox(10,
+        VBox layout = new VBox(12,
                 new Label("Buscar por Código da Disciplina:"), txtBuscaDisciplina, btnBuscarDisciplina,
                 new Label("Buscar por Nome do Aluno:"), txtBuscaAluno, btnBuscarAluno,
-                resultado
+                new Label("Resultado da Busca:"), resultado
         );
-        layout.setPadding(new Insets(10));
+        layout.setPadding(new Insets(20));
+        layout.setStyle("-fx-background-color: #f4faff;");
 
-        Scene scene = new Scene(layout, 500, 500);
+        Scene scene = new Scene(layout, 700, 600);
         stage.setScene(scene);
         stage.show();
     }

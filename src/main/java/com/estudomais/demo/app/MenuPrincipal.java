@@ -6,10 +6,12 @@ import com.estudomais.demo.view.DisciplinaView;
 import com.estudomais.demo.view.TarefaView;
 import com.estudomais.demo.view.VinculoAlunoDisciplinaView;
 import javafx.application.Application;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Button;
+import javafx.scene.control.*;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
@@ -17,11 +19,24 @@ import javafx.stage.Stage;
 
 public class MenuPrincipal extends Application {
 
+    private ObservableList<String> logsData = FXCollections.observableArrayList();
+    private TableView<String> tabelaLogs = new TableView<>();
+
     @Override
     public void start(Stage primaryStage) {
-        primaryStage.setTitle("Menu Principal - Estudo+");
+        primaryStage.setTitle("Estudo+");
 
-        // Botões
+        // Tabela de logs (direita)
+        TableColumn<String, String> colAcao = new TableColumn<>("Histórico de Ações");
+        colAcao.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()));
+        colAcao.setPrefWidth(600);
+        tabelaLogs.getColumns().add(colAcao);
+        tabelaLogs.setItems(logsData);
+
+        // Adiciona o primeiro log ao iniciar
+        adicionarLog("Sistema inicializado");
+
+        // Botões da sidebar
         Button btnAluno = new Button("Aluno");
         Button btnDisciplina = new Button("Disciplina");
         Button btnTarefa = new Button("Tarefa");
@@ -31,36 +46,60 @@ public class MenuPrincipal extends Application {
         Button[] botoes = {btnAluno, btnDisciplina, btnTarefa, btnDetalhes, btnVinculo};
         for (Button b : botoes) {
             b.setStyle("-fx-background-color: #2e86de; -fx-text-fill: white; -fx-font-weight: bold;");
-            b.setPrefWidth(160);
-            b.setPrefHeight(40);
+            b.setMaxWidth(Double.MAX_VALUE);
         }
 
-        // Ações
-        btnAluno.setOnAction(e -> new AlunoView().exibir());
-        btnDisciplina.setOnAction(e -> new DisciplinaView().exibir());
-        btnTarefa.setOnAction(e -> new TarefaView().exibir());
-        btnDetalhes.setOnAction(e -> new DetalhesView().exibir());
-        btnVinculo.setOnAction(e -> new VinculoAlunoDisciplinaView().exibir());
+        // Ações dos botões + log
+        btnAluno.setOnAction(e -> {
+            new AlunoView().exibir();
+            adicionarLog("Tela de Aluno aberta");
+        });
 
-        // Layout horizontal dos botões
-        HBox botoesBox = new HBox(15, btnAluno, btnDisciplina, btnTarefa, btnDetalhes, btnVinculo);
-        botoesBox.setAlignment(Pos.CENTER);
+        btnDisciplina.setOnAction(e -> {
+            new DisciplinaView().exibir();
+            adicionarLog("Tela de Disciplina aberta");
+        });
 
-        // Retângulo container
-        VBox container = new VBox(botoesBox);
-        container.setPadding(new Insets(30));
-        container.setAlignment(Pos.CENTER);
-        container.setBackground(new Background(new BackgroundFill(Color.WHITE, new CornerRadii(15), Insets.EMPTY)));
-        container.setBorder(new Border(new BorderStroke(Color.LIGHTGRAY, BorderStrokeStyle.SOLID, new CornerRadii(15), BorderWidths.DEFAULT)));
-        container.setEffect(new DropShadow(10, Color.GRAY));
+        btnTarefa.setOnAction(e -> {
+            new TarefaView().exibir();
+            adicionarLog("Tela de Tarefa aberta");
+        });
 
-        // Fundo da cena
-        StackPane root = new StackPane(container);
-        root.setStyle("-fx-background-color: #ecf0f1;");
+        btnDetalhes.setOnAction(e -> {
+            new DetalhesView().exibir();
+            adicionarLog("Tela de Detalhes aberta");
+        });
 
-        Scene scene = new Scene(root, 900, 100);
+        btnVinculo.setOnAction(e -> {
+            new VinculoAlunoDisciplinaView().exibir();
+            adicionarLog("Tela de Vínculo Aluno x Disciplina aberta");
+        });
+
+        // Sidebar
+        VBox sidebar = new VBox(15, btnAluno, btnDisciplina, btnTarefa, btnDetalhes, btnVinculo);
+        sidebar.setPadding(new Insets(20));
+        sidebar.setStyle("-fx-background-color: #dfe6e9;");
+        sidebar.setPrefWidth(200);
+        sidebar.setAlignment(Pos.TOP_CENTER);
+        sidebar.setEffect(new DropShadow(5, Color.GRAY));
+
+        // Painel da tabela
+        VBox painelLogs = new VBox(tabelaLogs);
+        painelLogs.setPadding(new Insets(20));
+        painelLogs.setAlignment(Pos.TOP_CENTER);
+
+        // Layout principal: sidebar + painelLogs
+        HBox layoutPrincipal = new HBox(sidebar, painelLogs);
+
+        Scene scene = new Scene(layoutPrincipal, 900, 500);
         primaryStage.setScene(scene);
         primaryStage.show();
+    }
+
+    // Método para adicionar logs à tabela
+    private void adicionarLog(String texto) {
+        logsData.add(texto);
+        tabelaLogs.scrollTo(logsData.size() - 1);
     }
 
     public static void main(String[] args) {

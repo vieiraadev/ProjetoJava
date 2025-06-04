@@ -26,7 +26,6 @@ public class VinculoAlunoDisciplinaView {
             comboAlunos.getItems().add(a.getNome());
         }
 
-        // Dropdown para disciplinas a vincular
         List<String> disciplinasSelecionadasVincular = new ArrayList<>();
         MenuButton dropdownVincular = new MenuButton("Selecionar Disciplinas para Vincular");
 
@@ -42,7 +41,6 @@ public class VinculoAlunoDisciplinaView {
             dropdownVincular.getItems().add(item);
         }
 
-        // Dropdown para disciplinas a remover (atualizado ao selecionar aluno)
         List<String> disciplinasSelecionadasRemover = new ArrayList<>();
         MenuButton dropdownRemover = new MenuButton("Selecionar Disciplinas para Remover");
 
@@ -71,8 +69,10 @@ public class VinculoAlunoDisciplinaView {
 
         Button btnVincular = new Button("Vincular Disciplinas");
         Button btnRemover = new Button("Remover Disciplinas");
+
         TextArea resultado = new TextArea();
         resultado.setEditable(false);
+        resultado.setPrefHeight(120);
 
         btnVincular.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
@@ -111,7 +111,8 @@ public class VinculoAlunoDisciplinaView {
                     a.setDisciplinasVinculadas(atuais);
                     try {
                         AlunoDAO.salvarLista(alunos);
-                        resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome() + ". Disciplinas ignoradas (já vinculadas): " + String.join(", ", jaVinculadas));
+                        resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome() +
+                                ". Ignoradas (já vinculadas): " + String.join(", ", jaVinculadas));
                         comboAlunos.getOnAction().handle(null);
                     } catch (IOException ex) {
                         resultado.setText("Erro ao salvar: " + ex.getMessage());
@@ -151,7 +152,8 @@ public class VinculoAlunoDisciplinaView {
                         a.setDisciplinasVinculadas(atuais);
                         try {
                             AlunoDAO.salvarLista(alunos);
-                            resultado.setText("Disciplinas removidas do aluno " + a.getNome() + ": " + String.join(", ", realmenteRemovidas));
+                            resultado.setText("Disciplinas removidas do aluno " + a.getNome() + ": " +
+                                    String.join(", ", realmenteRemovidas));
                             comboAlunos.getOnAction().handle(null);
                         } catch (IOException ex) {
                             resultado.setText("Erro ao salvar: " + ex.getMessage());
@@ -162,15 +164,17 @@ public class VinculoAlunoDisciplinaView {
             }
         });
 
-        VBox layout = new VBox(10,
+        VBox layout = new VBox(12,
                 new Label("Selecione o Aluno:"), comboAlunos,
                 new Label("Disciplinas para Vincular:"), dropdownVincular, btnVincular,
                 new Label("Disciplinas para Remover:"), dropdownRemover, btnRemover,
-                resultado
+                new Label("Mensagens do Sistema:"), resultado
         );
-        layout.setPadding(new Insets(10));
+        layout.setPadding(new Insets(20));
+        layout.setStyle("-fx-background-color: #f4faff;");
 
-        stage.setScene(new Scene(layout, 520, 600));
+        Scene scene = new Scene(layout, 650, 600);
+        stage.setScene(scene);
         stage.show();
     }
 }

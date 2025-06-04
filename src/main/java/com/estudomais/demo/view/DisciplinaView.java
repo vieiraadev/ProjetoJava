@@ -3,11 +3,12 @@ package com.estudomais.demo.view;
 import com.estudomais.demo.model.Disciplina;
 import com.estudomais.demo.persistence.DisciplinaDAO;
 import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
+import javafx.scene.control.cell.PropertyValueFactory;
+import javafx.scene.layout.*;
 import javafx.stage.Stage;
 
 import java.io.IOException;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 public class DisciplinaView {
 
     private boolean modoEdicao = false;
+    private ObservableList<Disciplina> disciplinasData = FXCollections.observableArrayList();
 
     public void exibir() {
         Stage stage = new Stage();
@@ -30,19 +32,23 @@ public class DisciplinaView {
 
         ComboBox<String> comboRemover = new ComboBox<>();
         comboRemover.setPromptText("Selecione a disciplina para remover");
-        atualizarCombo(comboRemover);
 
         ComboBox<String> comboEditar = new ComboBox<>();
         comboEditar.setPromptText("Selecione a disciplina para editar");
+
+        atualizarCombo(comboRemover);
         atualizarCombo(comboEditar);
 
         Button btnSalvar = new Button("Salvar");
-        Button btnListar = new Button("Listar");
-        Button btnRemover = new Button("Remover");
-        Button btnEditar = new Button("Editar");
+        Button btnRemover = new Button("Remover Disciplina");
+        Button btnEditar = new Button("Editar Disciplina");
 
         TextArea txtArea = new TextArea();
         txtArea.setEditable(false);
+        txtArea.setPrefHeight(100);
+
+        TableView<Disciplina> tabelaDisciplinas = criarTabelaDisciplinas();
+        atualizarTabelaDisciplinas(tabelaDisciplinas);
 
         btnSalvar.setOnAction(e -> {
             String nome = txtNome.getText().trim();
@@ -73,7 +79,7 @@ public class DisciplinaView {
                     txtArea.setText("Erro: A carga horária deve ser maior que zero.");
                     return;
                 }
-            } catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex1) {
                 txtArea.setText("Erro: Carga horária deve ser um número inteiro.");
                 return;
             }
@@ -85,7 +91,7 @@ public class DisciplinaView {
                     txtArea.setText("Erro: O semestre deve estar entre 1 e 10.");
                     return;
                 }
-            } catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex2) {
                 txtArea.setText("Erro: O semestre deve ser um número válido.");
                 return;
             }
@@ -107,25 +113,12 @@ public class DisciplinaView {
 
                 atualizarCombo(comboRemover);
                 atualizarCombo(comboEditar);
+                atualizarTabelaDisciplinas(tabelaDisciplinas);
                 txtCodigo.setDisable(false);
                 modoEdicao = false;
-            } catch (IOException ex) {
-                txtArea.setText("Erro ao salvar: " + ex.getMessage());
+            } catch (IOException ex3) {
+                txtArea.setText("Erro ao salvar: " + ex3.getMessage());
             }
-        });
-
-        btnListar.setOnAction(e -> {
-            var lista = DisciplinaDAO.listarDisciplinas();
-            StringBuilder sb = new StringBuilder();
-            for (Disciplina d : lista) {
-                sb.append("Nome: ").append(d.getNome()).append("\n");
-                sb.append("Código: ").append(d.getCodigo()).append("\n");
-                sb.append("Carga Horária: ").append(d.getCargaHoraria()).append("\n");
-                sb.append("Semestre: ").append(d.getSemestre()).append("\n");
-                sb.append("Professor: ").append(d.getProfessorResponsavel()).append("\n");
-                sb.append("--------------------------\n");
-            }
-            txtArea.setText(sb.toString());
         });
 
         btnRemover.setOnAction(e -> {
@@ -145,11 +138,12 @@ public class DisciplinaView {
                     txtArea.setText("Disciplina removida com sucesso.");
                     atualizarCombo(comboRemover);
                     atualizarCombo(comboEditar);
+                    atualizarTabelaDisciplinas(tabelaDisciplinas);
                 } else {
                     txtArea.setText("Erro: disciplina não encontrada.");
                 }
-            } catch (IOException ex) {
-                txtArea.setText("Erro ao remover: " + ex.getMessage());
+            } catch (IOException ex4) {
+                txtArea.setText("Erro ao remover: " + ex4.getMessage());
             }
         });
 
@@ -167,7 +161,7 @@ public class DisciplinaView {
             if (disciplina != null) {
                 txtNome.setText(disciplina.getNome());
                 txtCodigo.setText(disciplina.getCodigo());
-                txtCodigo.setDisable(true); // impede alteração do código
+                txtCodigo.setDisable(true);
                 txtCargaHoraria.setText(String.valueOf(disciplina.getCargaHoraria()));
                 txtSemestre.setText(disciplina.getSemestre());
                 txtProfessor.setText(disciplina.getProfessorResponsavel());
@@ -178,21 +172,25 @@ public class DisciplinaView {
             }
         });
 
-        HBox botoes = new HBox(10, btnSalvar, btnListar);
-        VBox layout = new VBox(10,
+        VBox formCadastro = new VBox(8,
                 new Label("Nome da Disciplina:"), txtNome,
                 new Label("Código da Disciplina:"), txtCodigo,
                 new Label("Carga Horária:"), txtCargaHoraria,
                 new Label("Semestre ou Período:"), txtSemestre,
                 new Label("Professor Responsável:"), txtProfessor,
-                botoes,
+                btnSalvar,
                 new Label("Remover Disciplina:"), comboRemover, btnRemover,
                 new Label("Editar Disciplina:"), comboEditar, btnEditar,
-                txtArea
+                new Label("Mensagens do sistema:"), txtArea
         );
-        layout.setPadding(new Insets(10));
+        formCadastro.setPadding(new Insets(10));
+        formCadastro.setStyle("-fx-background-color: #eef6fb; -fx-border-color: #ccc; -fx-border-radius: 8;");
 
-        stage.setScene(new Scene(layout, 500, 700));
+        HBox layoutPrincipal = new HBox(20, formCadastro, tabelaDisciplinas);
+        layoutPrincipal.setPadding(new Insets(20));
+
+        Scene scene = new Scene(layoutPrincipal, 1000, 700);
+        stage.setScene(scene);
         stage.show();
     }
 
@@ -203,5 +201,35 @@ public class DisciplinaView {
                         .collect(Collectors.toList())
         );
         combo.setValue(null);
+    }
+
+    private TableView<Disciplina> criarTabelaDisciplinas() {
+        TableView<Disciplina> tabela = new TableView<>();
+
+        TableColumn<Disciplina, String> colNome = new TableColumn<>("Nome");
+        colNome.setCellValueFactory(new PropertyValueFactory<>("nome"));
+
+        TableColumn<Disciplina, String> colCodigo = new TableColumn<>("Código");
+        colCodigo.setCellValueFactory(new PropertyValueFactory<>("codigo"));
+
+        TableColumn<Disciplina, Integer> colCarga = new TableColumn<>("Carga Horária");
+        colCarga.setCellValueFactory(new PropertyValueFactory<>("cargaHoraria"));
+
+        TableColumn<Disciplina, String> colSemestre = new TableColumn<>("Semestre");
+        colSemestre.setCellValueFactory(new PropertyValueFactory<>("semestre"));
+
+        TableColumn<Disciplina, String> colProfessor = new TableColumn<>("Professor");
+        colProfessor.setCellValueFactory(new PropertyValueFactory<>("professorResponsavel"));
+
+        tabela.getColumns().addAll(colNome, colCodigo, colCarga, colSemestre, colProfessor);
+        tabela.setPrefWidth(700);
+        tabela.setItems(disciplinasData);
+
+        return tabela;
+    }
+
+    private void atualizarTabelaDisciplinas(TableView<Disciplina> tabela) {
+        disciplinasData.setAll(DisciplinaDAO.listarDisciplinas());
+        tabela.refresh();
     }
 }
