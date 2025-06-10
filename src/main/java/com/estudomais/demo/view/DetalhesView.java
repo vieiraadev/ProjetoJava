@@ -12,6 +12,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
+import java.io.IOException;
 import java.util.List;
 
 public class DetalhesView {
@@ -41,9 +42,17 @@ public class DetalhesView {
                 return;
             }
 
-            List<Disciplina> disciplinas = DisciplinaDAO.listarDisciplinas();
-            List<Tarefa> tarefas = TarefaDAO.listarTarefas();
-            List<Aluno> alunos = AlunoDAO.listarAlunos();
+            List<Disciplina> disciplinas;
+            List<Tarefa> tarefas;
+            List<Aluno> alunos;
+            try {
+                disciplinas = DisciplinaDAO.listarDisciplinas();
+                tarefas = TarefaDAO.listarTarefas();
+                alunos = AlunoDAO.listarAlunos();
+            } catch (IOException ex) {
+                resultado.setText("Erro ao carregar dados: " + ex.getMessage());
+                return;
+            }
 
             Disciplina encontrada = disciplinas.stream()
                     .filter(d -> d.getCodigo().equalsIgnoreCase(codigo))
@@ -90,7 +99,13 @@ public class DetalhesView {
                 return;
             }
 
-            List<Aluno> alunos = AlunoDAO.listarAlunos();
+            List<Aluno> alunos;
+            try {
+                alunos = AlunoDAO.listarAlunos();
+            } catch (IOException ex) {
+                resultado.setText("Erro ao carregar alunos: " + ex.getMessage());
+                return;
+            }
 
             Aluno encontrado = alunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeAluno))

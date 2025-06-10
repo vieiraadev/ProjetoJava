@@ -21,34 +21,48 @@ public class VinculoAlunoDisciplinaView {
         stage.setTitle("Gerenciar Vínculo Aluno x Disciplinas");
 
         ComboBox<String> comboAlunos = new ComboBox<>();
-        List<Aluno> alunos = AlunoDAO.listarAlunos();
-        for (Aluno a : alunos) {
-            comboAlunos.getItems().add(a.getNome());
+        List<Aluno> alunos = new ArrayList<>();
+        TextArea resultado = new TextArea();
+        resultado.setEditable(false);
+        resultado.setPrefHeight(120);
+
+        try {
+            alunos = AlunoDAO.listarAlunos();
+            for (Aluno a : alunos) {
+                comboAlunos.getItems().add(a.getNome());
+            }
+        } catch (IOException ex) {
+            resultado.setText("Erro ao carregar alunos: " + ex.getMessage());
         }
 
         List<String> disciplinasSelecionadasVincular = new ArrayList<>();
         MenuButton dropdownVincular = new MenuButton("Selecionar Disciplinas para Vincular");
 
-        for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).toList()) {
-            CheckMenuItem item = new CheckMenuItem(nomeDisc);
-            item.setOnAction(e -> {
-                if (item.isSelected()) {
-                    disciplinasSelecionadasVincular.add(nomeDisc);
-                } else {
-                    disciplinasSelecionadasVincular.remove(nomeDisc);
-                }
-            });
-            dropdownVincular.getItems().add(item);
+        try {
+            for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).toList()) {
+                CheckMenuItem item = new CheckMenuItem(nomeDisc);
+                item.setOnAction(e -> {
+                    if (item.isSelected()) {
+                        disciplinasSelecionadasVincular.add(nomeDisc);
+                    } else {
+                        disciplinasSelecionadasVincular.remove(nomeDisc);
+                    }
+                });
+                dropdownVincular.getItems().add(item);
+            }
+        } catch (IOException ex) {
+            resultado.setText("Erro ao carregar disciplinas: " + ex.getMessage());
         }
 
         List<String> disciplinasSelecionadasRemover = new ArrayList<>();
         MenuButton dropdownRemover = new MenuButton("Selecionar Disciplinas para Remover");
 
+        List<Aluno> finalAlunos = alunos;
         comboAlunos.setOnAction(e -> {
             disciplinasSelecionadasRemover.clear();
             dropdownRemover.getItems().clear();
             String nomeSelecionado = comboAlunos.getValue();
-            Aluno aluno = alunos.stream()
+            Aluno aluno = finalAlunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeSelecionado))
                     .findFirst()
                     .orElse(null);
@@ -70,9 +84,7 @@ public class VinculoAlunoDisciplinaView {
         Button btnVincular = new Button("Vincular Disciplinas");
         Button btnRemover = new Button("Remover Disciplinas");
 
-        TextArea resultado = new TextArea();
-        resultado.setEditable(false);
-        resultado.setPrefHeight(120);
+        List<Aluno> finalAlunosRef = alunos;
 
         btnVincular.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
@@ -86,7 +98,7 @@ public class VinculoAlunoDisciplinaView {
                 return;
             }
 
-            for (Aluno a : alunos) {
+            for (Aluno a : finalAlunosRef) {
                 if (a.getNome().equalsIgnoreCase(nomeSelecionado)) {
                     List<String> atuais = a.getDisciplinasVinculadas();
                     if (atuais == null) atuais = new ArrayList<>();
@@ -110,7 +122,7 @@ public class VinculoAlunoDisciplinaView {
                     atuais.addAll(novasParaVincular);
                     a.setDisciplinasVinculadas(atuais);
                     try {
-                        AlunoDAO.salvarLista(alunos);
+                        AlunoDAO.salvarLista(finalAlunosRef);
                         resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome() +
                                 ". Ignoradas (já vinculadas): " + String.join(", ", jaVinculadas));
                         comboAlunos.getOnAction().handle(null);
@@ -134,7 +146,7 @@ public class VinculoAlunoDisciplinaView {
                 return;
             }
 
-            for (Aluno a : alunos) {
+            for (Aluno a : finalAlunosRef) {
                 if (a.getNome().equalsIgnoreCase(nomeSelecionado)) {
                     List<String> atuais = a.getDisciplinasVinculadas();
                     if (atuais != null) {
@@ -151,7 +163,7 @@ public class VinculoAlunoDisciplinaView {
                         atuais.removeAll(realmenteRemovidas);
                         a.setDisciplinasVinculadas(atuais);
                         try {
-                            AlunoDAO.salvarLista(alunos);
+                            AlunoDAO.salvarLista(finalAlunosRef);
                             resultado.setText("Disciplinas removidas do aluno " + a.getNome() + ": " +
                                     String.join(", ", realmenteRemovidas));
                             comboAlunos.getOnAction().handle(null);

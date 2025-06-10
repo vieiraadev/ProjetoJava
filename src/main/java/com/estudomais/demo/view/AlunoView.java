@@ -34,34 +34,35 @@ public class AlunoView {
         List<String> disciplinasSelecionadas = new ArrayList<>();
         MenuButton dropdownDisciplinas = new MenuButton("Selecionar Disciplinas");
 
-        for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(d -> d.getNome()).collect(Collectors.toList())) {
-            CheckMenuItem item = new CheckMenuItem(nomeDisc);
-            item.setOnAction(e -> {
-                if (item.isSelected()) {
-                    disciplinasSelecionadas.add(nomeDisc);
-                } else {
-                    disciplinasSelecionadas.remove(nomeDisc);
-                }
-            });
-            dropdownDisciplinas.getItems().add(item);
+        TextArea txtArea = new TextArea();
+        txtArea.setEditable(false);
+        txtArea.setPrefHeight(100);
+
+        try {
+            for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(d -> d.getNome()).collect(Collectors.toList())) {
+                CheckMenuItem item = new CheckMenuItem(nomeDisc);
+                item.setOnAction(e -> {
+                    if (item.isSelected()) {
+                        disciplinasSelecionadas.add(nomeDisc);
+                    } else {
+                        disciplinasSelecionadas.remove(nomeDisc);
+                    }
+                });
+                dropdownDisciplinas.getItems().add(item);
+            }
+        } catch (Exception ex) {
+            dropdownDisciplinas.setDisable(true);
+            txtArea.setText("Erro ao carregar disciplinas: " + ex.getMessage());
         }
 
         ComboBox<String> comboRemoverAluno = new ComboBox<>();
-        comboRemoverAluno.setPromptText("Selecione o aluno para remover");
-
         ComboBox<String> comboEditarAluno = new ComboBox<>();
-        comboEditarAluno.setPromptText("Selecione o aluno para editar");
-
         atualizarComboAlunos(comboRemoverAluno);
         atualizarComboAlunos(comboEditarAluno);
 
         Button btnSalvar = new Button("Salvar");
         Button btnRemover = new Button("Remover Aluno");
         Button btnEditar = new Button("Editar Aluno");
-
-        TextArea txtArea = new TextArea();
-        txtArea.setEditable(false);
-        txtArea.setPrefHeight(100);
 
         TableView<Aluno> tabelaAlunos = criarTabelaAlunos();
         atualizarTabelaAlunos(tabelaAlunos);
@@ -101,7 +102,7 @@ public class AlunoView {
                     txtArea.setText("Erro: O período deve ser um número entre 1 e 12.");
                     return;
                 }
-            } catch (NumberFormatException ex) {
+            } catch (NumberFormatException ex1) {
                 txtArea.setText("Erro: O período deve ser um número válido.");
                 return;
             }
@@ -111,7 +112,14 @@ public class AlunoView {
                 return;
             }
 
-            List<Aluno> existentes = AlunoDAO.listarAlunos();
+            List<Aluno> existentes;
+            try {
+                existentes = AlunoDAO.listarAlunos();
+            } catch (IOException ex2) {
+                txtArea.setText("Erro ao verificar alunos existentes: " + ex2.getMessage());
+                return;
+            }
+
             boolean nomeDuplicado = existentes.stream().anyMatch(a -> a.getNome().equalsIgnoreCase(nome));
             boolean emailDuplicado = existentes.stream().anyMatch(a -> a.getEmail().equalsIgnoreCase(email));
 
@@ -132,8 +140,8 @@ public class AlunoView {
                 atualizarComboAlunos(comboRemoverAluno);
                 atualizarComboAlunos(comboEditarAluno);
                 atualizarTabelaAlunos(tabelaAlunos);
-            } catch (IOException ex) {
-                txtArea.setText("Erro ao salvar: " + ex.getMessage());
+            } catch (IOException ex3) {
+                txtArea.setText("Erro ao salvar: " + ex3.getMessage());
             }
         });
 
@@ -160,8 +168,8 @@ public class AlunoView {
                 } else {
                     txtArea.setText("Erro: aluno não encontrado.");
                 }
-            } catch (IOException ex) {
-                txtArea.setText("Erro ao remover: " + ex.getMessage());
+            } catch (IOException ex4) {
+                txtArea.setText("Erro ao remover: " + ex4.getMessage());
             }
         });
 
@@ -172,7 +180,14 @@ public class AlunoView {
                 return;
             }
 
-            List<Aluno> alunos = AlunoDAO.listarAlunos();
+            List<Aluno> alunos;
+            try {
+                alunos = AlunoDAO.listarAlunos();
+            } catch (IOException ex) {
+                txtArea.setText("Erro ao buscar alunos: " + ex.getMessage());
+                return;
+            }
+
             Aluno alunoSelecionado = alunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeSelecionado))
                     .findFirst()
@@ -234,12 +249,17 @@ public class AlunoView {
     }
 
     private void atualizarComboAlunos(ComboBox<String> combo) {
-        combo.getItems().setAll(
-                AlunoDAO.listarAlunos().stream()
-                        .map(Aluno::getNome)
-                        .collect(Collectors.toList())
-        );
-        combo.setValue(null);
+        try {
+            combo.getItems().setAll(
+                    AlunoDAO.listarAlunos().stream()
+                            .map(Aluno::getNome)
+                            .collect(Collectors.toList())
+            );
+            combo.setValue(null);
+        } catch (IOException e) {
+            combo.getItems().clear();
+            System.out.println("Erro ao carregar alunos para o combo: " + e.getMessage());
+        }
     }
 
     private TableView<Aluno> criarTabelaAlunos() {
@@ -274,9 +294,14 @@ public class AlunoView {
         return tabela;
     }
 
-
     private void atualizarTabelaAlunos(TableView<Aluno> tabela) {
-        alunosData.setAll(AlunoDAO.listarAlunos());
-        tabela.refresh();
+        try {
+            alunosData.setAll(AlunoDAO.listarAlunos());
+            tabela.refresh();
+        } catch (IOException e) {
+            alunosData.clear();
+            tabela.refresh();
+            System.out.println("Erro ao atualizar tabela: " + e.getMessage());
+        }
     }
 }

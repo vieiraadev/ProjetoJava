@@ -36,19 +36,19 @@ public class DisciplinaView {
         ComboBox<String> comboEditar = new ComboBox<>();
         comboEditar.setPromptText("Selecione a disciplina para editar");
 
-        atualizarCombo(comboRemover);
-        atualizarCombo(comboEditar);
+        TextArea txtArea = new TextArea();
+        txtArea.setEditable(false);
+        txtArea.setPrefHeight(100);
+
+        atualizarCombo(comboRemover, txtArea);
+        atualizarCombo(comboEditar, txtArea);
 
         Button btnSalvar = new Button("Salvar");
         Button btnRemover = new Button("Remover Disciplina");
         Button btnEditar = new Button("Editar Disciplina");
 
-        TextArea txtArea = new TextArea();
-        txtArea.setEditable(false);
-        txtArea.setPrefHeight(100);
-
         TableView<Disciplina> tabelaDisciplinas = criarTabelaDisciplinas();
-        atualizarTabelaDisciplinas(tabelaDisciplinas);
+        atualizarTabelaDisciplinas(tabelaDisciplinas, txtArea);
 
         btnSalvar.setOnAction(e -> {
             String nome = txtNome.getText().trim();
@@ -96,7 +96,14 @@ public class DisciplinaView {
                 return;
             }
 
-            List<Disciplina> existentes = DisciplinaDAO.listarDisciplinas();
+            List<Disciplina> existentes;
+            try {
+                existentes = DisciplinaDAO.listarDisciplinas();
+            } catch (IOException ex) {
+                txtArea.setText("Erro ao carregar disciplinas existentes: " + ex.getMessage());
+                return;
+            }
+
             boolean codigoDuplicado = existentes.stream()
                     .anyMatch(d -> d.getCodigo().equalsIgnoreCase(codigo) &&
                             (!modoEdicao || !d.getNome().equalsIgnoreCase(nome)));
@@ -111,9 +118,9 @@ public class DisciplinaView {
                 DisciplinaDAO.salvarDisciplina(disciplina);
                 txtArea.setText(modoEdicao ? "Disciplina atualizada com sucesso!" : "Disciplina salva com sucesso!");
 
-                atualizarCombo(comboRemover);
-                atualizarCombo(comboEditar);
-                atualizarTabelaDisciplinas(tabelaDisciplinas);
+                atualizarCombo(comboRemover, txtArea);
+                atualizarCombo(comboEditar, txtArea);
+                atualizarTabelaDisciplinas(tabelaDisciplinas, txtArea);
                 txtCodigo.setDisable(false);
                 modoEdicao = false;
             } catch (IOException ex3) {
@@ -136,9 +143,9 @@ public class DisciplinaView {
                 if (disciplina != null) {
                     DisciplinaDAO.removerPorCodigo(disciplina.getCodigo());
                     txtArea.setText("Disciplina removida com sucesso.");
-                    atualizarCombo(comboRemover);
-                    atualizarCombo(comboEditar);
-                    atualizarTabelaDisciplinas(tabelaDisciplinas);
+                    atualizarCombo(comboRemover, txtArea);
+                    atualizarCombo(comboEditar, txtArea);
+                    atualizarTabelaDisciplinas(tabelaDisciplinas, txtArea);
                 } else {
                     txtArea.setText("Erro: disciplina não encontrada.");
                 }
@@ -154,9 +161,15 @@ public class DisciplinaView {
                 return;
             }
 
-            Disciplina disciplina = DisciplinaDAO.listarDisciplinas().stream()
-                    .filter(d -> d.getNome().equalsIgnoreCase(nomeSelecionado))
-                    .findFirst().orElse(null);
+            Disciplina disciplina;
+            try {
+                disciplina = DisciplinaDAO.listarDisciplinas().stream()
+                        .filter(d -> d.getNome().equalsIgnoreCase(nomeSelecionado))
+                        .findFirst().orElse(null);
+            } catch (IOException ex) {
+                txtArea.setText("Erro ao carregar disciplinas: " + ex.getMessage());
+                return;
+            }
 
             if (disciplina != null) {
                 txtNome.setText(disciplina.getNome());
@@ -194,13 +207,18 @@ public class DisciplinaView {
         stage.show();
     }
 
-    private void atualizarCombo(ComboBox<String> combo) {
-        combo.getItems().setAll(
-                DisciplinaDAO.listarDisciplinas().stream()
-                        .map(Disciplina::getNome)
-                        .collect(Collectors.toList())
-        );
-        combo.setValue(null);
+    private void atualizarCombo(ComboBox<String> combo, TextArea txtArea) {
+        try {
+            combo.getItems().setAll(
+                    DisciplinaDAO.listarDisciplinas().stream()
+                            .map(Disciplina::getNome)
+                            .collect(Collectors.toList())
+            );
+            combo.setValue(null);
+        } catch (IOException e) {
+            combo.getItems().clear();
+            txtArea.setText("Erro ao carregar disciplinas: " + e.getMessage());
+        }
     }
 
     private TableView<Disciplina> criarTabelaDisciplinas() {
@@ -228,8 +246,14 @@ public class DisciplinaView {
         return tabela;
     }
 
-    private void atualizarTabelaDisciplinas(TableView<Disciplina> tabela) {
-        disciplinasData.setAll(DisciplinaDAO.listarDisciplinas());
-        tabela.refresh();
+    private void atualizarTabelaDisciplinas(TableView<Disciplina> tabela, TextArea txtArea) {
+        try {
+            disciplinasData.setAll(DisciplinaDAO.listarDisciplinas());
+            tabela.refresh();
+        } catch (IOException e) {
+            disciplinasData.clear();
+            tabela.refresh();
+            txtArea.setText("Erro ao atualizar tabela: " + e.getMessage());
+        }
     }
 }

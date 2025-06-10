@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class TarefaView {
@@ -31,29 +32,32 @@ public class TarefaView {
         TextField txtPeso = new TextField();
 
         ComboBox<String> comboDisciplinas = new ComboBox<>();
-        comboDisciplinas.setItems(FXCollections.observableArrayList(
-                DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).collect(Collectors.toList())
-        ));
+        TextArea txtArea = new TextArea();
+        txtArea.setEditable(false);
+        txtArea.setPrefHeight(100);
+
+        try {
+            comboDisciplinas.setItems(FXCollections.observableArrayList(
+                    DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).collect(Collectors.toList())
+            ));
+        } catch (IOException e) {
+            txtArea.setText("Erro ao carregar disciplinas: " + e.getMessage());
+        }
 
         ComboBox<String> comboRemover = new ComboBox<>();
-        comboRemover.setPromptText("Selecione a tarefa para remover");
-
         ComboBox<String> comboEditar = new ComboBox<>();
+        comboRemover.setPromptText("Selecione a tarefa para remover");
         comboEditar.setPromptText("Selecione a tarefa para editar");
 
-        atualizarCombo(comboRemover);
-        atualizarCombo(comboEditar);
+        atualizarCombo(comboRemover, txtArea);
+        atualizarCombo(comboEditar, txtArea);
 
         Button btnSalvar = new Button("Salvar");
         Button btnRemover = new Button("Remover Tarefa");
         Button btnEditar = new Button("Editar Tarefa");
 
-        TextArea txtArea = new TextArea();
-        txtArea.setEditable(false);
-        txtArea.setPrefHeight(100);
-
         TableView<Tarefa> tabelaTarefas = criarTabelaTarefas();
-        atualizarTabelaTarefas(tabelaTarefas);
+        atualizarTabelaTarefas(tabelaTarefas, txtArea);
 
         btnSalvar.setOnAction(e -> {
             String titulo = txtTitulo.getText().trim();
@@ -88,9 +92,9 @@ public class TarefaView {
                 Tarefa tarefa = new Tarefa(titulo, descricao, dataEntrega, disciplina, peso);
                 TarefaDAO.salvarTarefa(tarefa);
                 txtArea.setText("Tarefa salva ou atualizada com sucesso!");
-                atualizarCombo(comboRemover);
-                atualizarCombo(comboEditar);
-                atualizarTabelaTarefas(tabelaTarefas);
+                atualizarCombo(comboRemover, txtArea);
+                atualizarCombo(comboEditar, txtArea);
+                atualizarTabelaTarefas(tabelaTarefas, txtArea);
                 txtTitulo.setDisable(false);
             } catch (IOException ex) {
                 txtArea.setText("Erro ao salvar: " + ex.getMessage());
@@ -107,9 +111,9 @@ public class TarefaView {
             try {
                 TarefaDAO.removerPorTitulo(tituloSelecionado);
                 txtArea.setText("Tarefa removida com sucesso.");
-                atualizarCombo(comboRemover);
-                atualizarCombo(comboEditar);
-                atualizarTabelaTarefas(tabelaTarefas);
+                atualizarCombo(comboRemover, txtArea);
+                atualizarCombo(comboEditar, txtArea);
+                atualizarTabelaTarefas(tabelaTarefas, txtArea);
             } catch (IOException ex) {
                 txtArea.setText("Erro ao remover: " + ex.getMessage());
             }
@@ -122,9 +126,15 @@ public class TarefaView {
                 return;
             }
 
-            Tarefa tarefa = TarefaDAO.listarTarefas().stream()
-                    .filter(t -> t.getTitulo().equalsIgnoreCase(tituloSelecionado))
-                    .findFirst().orElse(null);
+            Tarefa tarefa;
+            try {
+                tarefa = TarefaDAO.listarTarefas().stream()
+                        .filter(t -> t.getTitulo().equalsIgnoreCase(tituloSelecionado))
+                        .findFirst().orElse(null);
+            } catch (IOException ex) {
+                txtArea.setText("Erro ao buscar tarefas: " + ex.getMessage());
+                return;
+            }
 
             if (tarefa != null) {
                 txtTitulo.setText(tarefa.getTitulo());
@@ -161,13 +171,18 @@ public class TarefaView {
         stage.show();
     }
 
-    private void atualizarCombo(ComboBox<String> combo) {
-        combo.getItems().setAll(
-                TarefaDAO.listarTarefas().stream()
-                        .map(Tarefa::getTitulo)
-                        .collect(Collectors.toList())
-        );
-        combo.setValue(null);
+    private void atualizarCombo(ComboBox<String> combo, TextArea txtArea) {
+        try {
+            combo.getItems().setAll(
+                    TarefaDAO.listarTarefas().stream()
+                            .map(Tarefa::getTitulo)
+                            .collect(Collectors.toList())
+            );
+            combo.setValue(null);
+        } catch (IOException e) {
+            combo.getItems().clear();
+            txtArea.setText("Erro ao carregar tarefas: " + e.getMessage());
+        }
     }
 
     private TableView<Tarefa> criarTabelaTarefas() {
@@ -195,8 +210,14 @@ public class TarefaView {
         return tabela;
     }
 
-    private void atualizarTabelaTarefas(TableView<Tarefa> tabela) {
-        tarefasData.setAll(TarefaDAO.listarTarefas());
-        tabela.refresh();
+    private void atualizarTabelaTarefas(TableView<Tarefa> tabela, TextArea txtArea) {
+        try {
+            tarefasData.setAll(TarefaDAO.listarTarefas());
+            tabela.refresh();
+        } catch (IOException e) {
+            tarefasData.clear();
+            tabela.refresh();
+            txtArea.setText("Erro ao atualizar tabela de tarefas: " + e.getMessage());
+        }
     }
 }
