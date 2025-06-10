@@ -160,7 +160,7 @@ public class AlunoView {
                         .orElse(null);
 
                 if (alunoRemover != null) {
-                    AlunoDAO.removerAlunoPorEmail(alunoRemover.getEmail());
+                    AlunoDAO.removerAluno(alunoRemover);
                     txtArea.setText("Aluno removido com sucesso!");
                     atualizarComboAlunos(comboRemoverAluno);
                     atualizarComboAlunos(comboEditarAluno);
@@ -212,7 +212,7 @@ public class AlunoView {
                 }
 
                 try {
-                    AlunoDAO.removerAlunoPorEmail(alunoSelecionado.getEmail());
+                    AlunoDAO.removerAluno(alunoSelecionado);
                     txtArea.setText("Aluno carregado para edição. Altere os dados e clique em Salvar.");
                     atualizarComboAlunos(comboRemoverAluno);
                     atualizarComboAlunos(comboEditarAluno);

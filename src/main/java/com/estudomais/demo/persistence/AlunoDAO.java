@@ -3,7 +3,6 @@ package com.estudomais.demo.persistence;
 import com.estudomais.demo.model.Aluno;
 
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 public class AlunoDAO {
@@ -41,16 +40,16 @@ public class AlunoDAO {
         }
     }
 
-    public static void removerAlunoPorEmail(String email) throws IOException {
+    public static void removerAluno(Aluno alunoParaRemover) throws IOException {
         if (!arquivoExiste()) {
             throw new IOException("Arquivo de dados 'alunos.dat' não encontrado. Operação cancelada.");
         }
 
         List<Aluno> lista = listarAlunos();
-        boolean removido = lista.removeIf(a -> a.getEmail().equalsIgnoreCase(email));
+        boolean removido = lista.removeIf(a -> a.getEmail().equalsIgnoreCase(alunoParaRemover.getEmail()));
 
         if (!removido) {
-            throw new IOException("Aluno com email " + email + " não encontrado para remoção.");
+            throw new IOException("Aluno com email " + alunoParaRemover.getEmail() + " não encontrado para remoção.");
         }
 
         salvarLista(lista);
