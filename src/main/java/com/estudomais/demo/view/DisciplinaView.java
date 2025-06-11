@@ -88,7 +88,7 @@ public class DisciplinaView {
             try {
                 semestreInt = Integer.parseInt(semestre);
                 if (semestreInt < 1 || semestreInt > 10) {
-                    txtArea.setText("Erro: O semestre deve estar entre 1 e 10.");
+                    txtArea.setText("Erro: O semestre deve estar entre 1 e 12.");
                     return;
                 }
             } catch (NumberFormatException ex2) {

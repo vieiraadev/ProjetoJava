@@ -26,17 +26,16 @@ public class MenuPrincipal extends Application {
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Estudo+");
 
-        // Tabela de logs (direita)
+        // Tabela de logs
         TableColumn<String, String> colAcao = new TableColumn<>("Histórico de Ações");
         colAcao.setCellValueFactory(data -> new javafx.beans.property.SimpleStringProperty(data.getValue()));
         colAcao.setPrefWidth(600);
         tabelaLogs.getColumns().add(colAcao);
         tabelaLogs.setItems(logsData);
 
-        // Adiciona o primeiro log ao iniciar
+        // Adiciona o primeiro log
         adicionarLog("Sistema inicializado");
 
-        // Botões da sidebar
         Button btnAluno = new Button("Aluno");
         Button btnDisciplina = new Button("Disciplina");
         Button btnTarefa = new Button("Tarefa");
@@ -49,7 +48,6 @@ public class MenuPrincipal extends Application {
             b.setMaxWidth(Double.MAX_VALUE);
         }
 
-        // Ações dos botões + log
         btnAluno.setOnAction(e -> {
             new AlunoView().exibir();
             adicionarLog("Tela de Aluno aberta");
@@ -75,7 +73,6 @@ public class MenuPrincipal extends Application {
             adicionarLog("Tela de Vínculo Aluno x Disciplina aberta");
         });
 
-        // Sidebar
         VBox sidebar = new VBox(15, btnAluno, btnDisciplina, btnTarefa, btnDetalhes, btnVinculo);
         sidebar.setPadding(new Insets(20));
         sidebar.setStyle("-fx-background-color: #dfe6e9;");
@@ -83,12 +80,10 @@ public class MenuPrincipal extends Application {
         sidebar.setAlignment(Pos.TOP_CENTER);
         sidebar.setEffect(new DropShadow(5, Color.GRAY));
 
-        // Painel da tabela
         VBox painelLogs = new VBox(tabelaLogs);
         painelLogs.setPadding(new Insets(20));
         painelLogs.setAlignment(Pos.TOP_CENTER);
 
-        // Layout principal: sidebar + painelLogs
         HBox layoutPrincipal = new HBox(sidebar, painelLogs);
 
         Scene scene = new Scene(layoutPrincipal, 900, 500);

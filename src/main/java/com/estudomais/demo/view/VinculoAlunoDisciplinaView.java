@@ -4,6 +4,7 @@ import com.estudomais.demo.model.Aluno;
 import com.estudomais.demo.model.Disciplina;
 import com.estudomais.demo.persistence.AlunoDAO;
 import com.estudomais.demo.persistence.DisciplinaDAO;
+
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -14,18 +15,23 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+// Classe da interface gráfica que gerencia os vínculos entre alunos e disciplinas
 public class VinculoAlunoDisciplinaView {
 
+    // Método principal que monta e exibe a janela
     public void exibir() {
         Stage stage = new Stage();
         stage.setTitle("Gerenciar Vínculo Aluno x Disciplinas");
 
+        // dropdown para selecionar alunos
         ComboBox<String> comboAlunos = new ComboBox<>();
         List<Aluno> alunos = new ArrayList<>();
+
         TextArea resultado = new TextArea();
         resultado.setEditable(false);
         resultado.setPrefHeight(120);
 
+        // Carrega lista de alunos no ComboBox ou seja dropdown
         try {
             alunos = AlunoDAO.listarAlunos();
             for (Aluno a : alunos) {
@@ -38,6 +44,7 @@ public class VinculoAlunoDisciplinaView {
         List<String> disciplinasSelecionadasVincular = new ArrayList<>();
         MenuButton dropdownVincular = new MenuButton("Selecionar Disciplinas para Vincular");
 
+        // Carrega disciplinas e preenche dropdown para vínculo
         try {
             for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(Disciplina::getNome).toList()) {
                 CheckMenuItem item = new CheckMenuItem(nomeDisc);
@@ -54,18 +61,22 @@ public class VinculoAlunoDisciplinaView {
             resultado.setText("Erro ao carregar disciplinas: " + ex.getMessage());
         }
 
+        // Lista e dropdown para disciplinas a remover do aluno
         List<String> disciplinasSelecionadasRemover = new ArrayList<>();
         MenuButton dropdownRemover = new MenuButton("Selecionar Disciplinas para Remover");
 
+        // Atualiza as opções de remoção de disciplinas quando um aluno é selecionado
         List<Aluno> finalAlunos = alunos;
         comboAlunos.setOnAction(e -> {
             disciplinasSelecionadasRemover.clear();
             dropdownRemover.getItems().clear();
+
             String nomeSelecionado = comboAlunos.getValue();
             Aluno aluno = finalAlunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeSelecionado))
                     .findFirst()
                     .orElse(null);
+
             if (aluno != null) {
                 for (String disc : aluno.getDisciplinasVinculadas()) {
                     CheckMenuItem item = new CheckMenuItem(disc);
@@ -84,10 +95,12 @@ public class VinculoAlunoDisciplinaView {
         Button btnVincular = new Button("Vincular Disciplinas");
         Button btnRemover = new Button("Remover Disciplinas");
 
+        // Referência final para salvar alunos
         List<Aluno> finalAlunosRef = alunos;
 
         btnVincular.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
+
             if (nomeSelecionado == null) {
                 resultado.setText("Erro: Selecione um aluno para vincular.");
                 return;
@@ -106,6 +119,7 @@ public class VinculoAlunoDisciplinaView {
                     List<String> jaVinculadas = new ArrayList<>();
                     List<String> novasParaVincular = new ArrayList<>();
 
+                    // Verifica se alguma disciplina já está vinculada
                     for (String nova : disciplinasSelecionadasVincular) {
                         if (!atuais.contains(nova)) {
                             novasParaVincular.add(nova);
@@ -119,13 +133,15 @@ public class VinculoAlunoDisciplinaView {
                         return;
                     }
 
+                    // Vincula as novas disciplinas
                     atuais.addAll(novasParaVincular);
                     a.setDisciplinasVinculadas(atuais);
+
                     try {
                         AlunoDAO.salvarLista(finalAlunosRef);
                         resultado.setText("Disciplinas vinculadas ao aluno " + a.getNome() +
                                 ". Ignoradas (já vinculadas): " + String.join(", ", jaVinculadas));
-                        comboAlunos.getOnAction().handle(null);
+                        comboAlunos.getOnAction().handle(null); // atualiza lista de remoção
                     } catch (IOException ex) {
                         resultado.setText("Erro ao salvar: " + ex.getMessage());
                     }
@@ -136,6 +152,7 @@ public class VinculoAlunoDisciplinaView {
 
         btnRemover.setOnAction(e -> {
             String nomeSelecionado = comboAlunos.getValue();
+
             if (nomeSelecionado == null) {
                 resultado.setText("Erro: Selecione um aluno para remover disciplinas.");
                 return;
@@ -151,22 +168,27 @@ public class VinculoAlunoDisciplinaView {
                     List<String> atuais = a.getDisciplinasVinculadas();
                     if (atuais != null) {
                         List<String> realmenteRemovidas = new ArrayList<>();
+
+                        // Remove somente disciplinas que o aluno já tem
                         for (String d : disciplinasSelecionadasRemover) {
                             if (atuais.contains(d)) {
                                 realmenteRemovidas.add(d);
                             }
                         }
+
                         if (realmenteRemovidas.isEmpty()) {
                             resultado.setText("Nenhuma das disciplinas selecionadas está vinculada ao aluno.");
                             return;
                         }
+
+                        // Atualiza lista e salva
                         atuais.removeAll(realmenteRemovidas);
                         a.setDisciplinasVinculadas(atuais);
                         try {
                             AlunoDAO.salvarLista(finalAlunosRef);
                             resultado.setText("Disciplinas removidas do aluno " + a.getNome() + ": " +
                                     String.join(", ", realmenteRemovidas));
-                            comboAlunos.getOnAction().handle(null);
+                            comboAlunos.getOnAction().handle(null); // atualiza lista de remoção
                         } catch (IOException ex) {
                             resultado.setText("Erro ao salvar: " + ex.getMessage());
                         }

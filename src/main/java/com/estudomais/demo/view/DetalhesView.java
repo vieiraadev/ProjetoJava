@@ -6,6 +6,7 @@ import com.estudomais.demo.model.Tarefa;
 import com.estudomais.demo.persistence.AlunoDAO;
 import com.estudomais.demo.persistence.DisciplinaDAO;
 import com.estudomais.demo.persistence.TarefaDAO;
+
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -17,6 +18,7 @@ import java.util.List;
 
 public class DetalhesView {
 
+    // Método principal que monta e exibe a janela
     public void exibir() {
         Stage stage = new Stage();
         stage.setTitle("Detalhes de Disciplinas e Alunos");
@@ -27,7 +29,7 @@ public class DetalhesView {
         Button btnBuscarDisciplina = new Button("Buscar Disciplina");
 
         TextField txtBuscaAluno = new TextField();
-        txtBuscaAluno.setPromptText("Ex: João da Silva");
+        txtBuscaAluno.setPromptText("Ex: Vitor vieira");
 
         Button btnBuscarAluno = new Button("Buscar Aluno");
 
@@ -37,6 +39,7 @@ public class DetalhesView {
 
         btnBuscarDisciplina.setOnAction(e -> {
             String codigo = txtBuscaDisciplina.getText().trim();
+
             if (codigo.isEmpty()) {
                 resultado.setText("Erro: Informe o código da disciplina.");
                 return;
@@ -46,6 +49,7 @@ public class DetalhesView {
             List<Tarefa> tarefas;
             List<Aluno> alunos;
             try {
+                // Carrega os dados do sistema
                 disciplinas = DisciplinaDAO.listarDisciplinas();
                 tarefas = TarefaDAO.listarTarefas();
                 alunos = AlunoDAO.listarAlunos();
@@ -54,6 +58,7 @@ public class DetalhesView {
                 return;
             }
 
+            // Busca a disciplina pelo código informado
             Disciplina encontrada = disciplinas.stream()
                     .filter(d -> d.getCodigo().equalsIgnoreCase(codigo))
                     .findFirst()
@@ -63,6 +68,7 @@ public class DetalhesView {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Disciplina: ").append(encontrada.getNome()).append("\n\n");
 
+                // Lista as tarefas associadas
                 sb.append("Tarefas vinculadas:\n");
                 boolean temTarefas = false;
                 for (Tarefa t : tarefas) {
@@ -75,6 +81,7 @@ public class DetalhesView {
                 }
                 if (!temTarefas) sb.append("Nenhuma tarefa encontrada.\n");
 
+                // Lista os alunos
                 sb.append("\nAlunos vinculados:\n");
                 boolean temAlunos = false;
                 for (Aluno a : alunos) {
@@ -86,7 +93,7 @@ public class DetalhesView {
                 }
                 if (!temAlunos) sb.append("Nenhum aluno vinculado.\n");
 
-                resultado.setText(sb.toString());
+                resultado.setText(sb.toString()); // Exibe o resultado no TextArea
             } else {
                 resultado.setText("Disciplina não encontrada.");
             }
@@ -94,6 +101,7 @@ public class DetalhesView {
 
         btnBuscarAluno.setOnAction(e -> {
             String nomeAluno = txtBuscaAluno.getText().trim();
+
             if (nomeAluno.isEmpty()) {
                 resultado.setText("Erro: Informe o nome do aluno.");
                 return;
@@ -101,17 +109,20 @@ public class DetalhesView {
 
             List<Aluno> alunos;
             try {
+                // Carrega lista de alunos
                 alunos = AlunoDAO.listarAlunos();
             } catch (IOException ex) {
                 resultado.setText("Erro ao carregar alunos: " + ex.getMessage());
                 return;
             }
 
+            // Busca o aluno pelo nome
             Aluno encontrado = alunos.stream()
                     .filter(a -> a.getNome().equalsIgnoreCase(nomeAluno))
                     .findFirst()
                     .orElse(null);
 
+            // Se encontrou  mostra as disciplinas vinculadas
             if (encontrado != null && encontrado.getDisciplinasVinculadas() != null) {
                 StringBuilder sb = new StringBuilder();
                 sb.append("Disciplinas vinculadas ao aluno ").append(encontrado.getNome()).append(":\n");
@@ -124,6 +135,7 @@ public class DetalhesView {
             }
         });
 
+        // Monta o layout
         VBox layout = new VBox(12,
                 new Label("Buscar por Código da Disciplina:"), txtBuscaDisciplina, btnBuscarDisciplina,
                 new Label("Buscar por Nome do Aluno:"), txtBuscaAluno, btnBuscarAluno,

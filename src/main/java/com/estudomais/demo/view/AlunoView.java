@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class AlunoView {
-
+    // Para popular a tabela
     private ObservableList<Aluno> alunosData = FXCollections.observableArrayList();
 
     public void exibir() {
@@ -31,13 +31,14 @@ public class AlunoView {
         TextField txtPeriodo = new TextField();
         TextField txtFaculdade = new TextField();
 
+        //guarda as disciplinas
         List<String> disciplinasSelecionadas = new ArrayList<>();
         MenuButton dropdownDisciplinas = new MenuButton("Selecionar Disciplinas");
 
         TextArea txtArea = new TextArea();
         txtArea.setEditable(false);
         txtArea.setPrefHeight(100);
-
+        // Preenche o dropdown
         try {
             for (String nomeDisc : DisciplinaDAO.listarDisciplinas().stream().map(d -> d.getNome()).collect(Collectors.toList())) {
                 CheckMenuItem item = new CheckMenuItem(nomeDisc);
@@ -63,6 +64,7 @@ public class AlunoView {
         Button btnSalvar = new Button("Salvar");
         Button btnRemover = new Button("Remover Aluno");
         Button btnEditar = new Button("Editar Aluno");
+
 
         TableView<Aluno> tabelaAlunos = criarTabelaAlunos();
         atualizarTabelaAlunos(tabelaAlunos);
